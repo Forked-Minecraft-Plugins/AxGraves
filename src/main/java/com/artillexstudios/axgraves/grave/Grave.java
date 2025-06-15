@@ -33,16 +33,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.artillexstudios.axgraves.AxGraves.CONFIG;
 import static com.artillexstudios.axgraves.AxGraves.MESSAGES;
 import static com.artillexstudios.axgraves.AxGraves.MESSAGEUTILS;
 
 public class Grave {
+
+    private int graveID;
     private static final Vector ZERO_VECTOR = new Vector(0, 0, 0);
     private final long spawned;
     private final Location location;
@@ -55,6 +54,12 @@ public class Grave {
     private boolean removed = false;
 
     public Grave(Location loc, @NotNull OfflinePlayer offlinePlayer, @NotNull List<ItemStack> items, int storedXP, long date) {
+
+        SpawnedGraves.getGraves().stream()
+                .filter(grave -> grave.getPlayerName().equals(offlinePlayer.getName()))
+                .max(Comparator.comparingInt(Grave::getGraveID))
+                .ifPresentOrElse((grave) -> this.graveID = grave.getGraveID()+1, () -> this.graveID = 0);
+
         items = new ArrayList<>(items);
         items.removeIf(it -> {
             if (it == null) return true;
@@ -140,7 +145,13 @@ public class Grave {
         }
     }
 
-    public void interact(@NotNull Player opener, ServerboundInteractWrapper.InteractionHand slot) {
+    public void interact(@NotNull Player opener, ServerboundInteractWrapper.InteractionHand slot)
+    {
+        restore(opener,slot,false);
+    }
+
+    //restore param -> if true do not check inventory slots interaction
+    public void restore(@NotNull Player opener, ServerboundInteractWrapper.InteractionHand slot, boolean restore) {
         if (CONFIG.getBoolean("interact-only-own", false) && !opener.getUniqueId().equals(player.getUniqueId()) && !opener.hasPermission("axgraves.admin")) {
             MESSAGEUTILS.sendLang(opener, "interact.not-your-grave");
             return;
@@ -155,52 +166,53 @@ public class Grave {
             this.storedXP = 0;
         }
 
-        if (slot != null && slot.equals(ServerboundInteractWrapper.InteractionHand.MAIN_HAND) && opener.isSneaking()) {
+        if(!restore)
+        {
+            if (slot == null && !slot.equals(ServerboundInteractWrapper.InteractionHand.MAIN_HAND) && !opener.isSneaking()) return;
             if (opener.getGameMode() == GameMode.SPECTATOR) return;
             if (!CONFIG.getBoolean("enable-instant-pickup", true)) return;
             if (CONFIG.getBoolean("instant-pickup-only-own", false) && !opener.getUniqueId().equals(player.getUniqueId())) return;
+        }
 
-            for (ItemStack it : gui.getContents()) {
-                if (it == null) continue;
+        for (ItemStack it : gui.getContents()) {
+            if (it == null) continue;
 
-                if (CONFIG.getBoolean("auto-equip-armor", true)) {
-                    if (it.getType().toString().endsWith("_HELMET") && opener.getInventory().getHelmet() == null) {
-                        opener.getInventory().setHelmet(it);
-                        it.setAmount(0);
-                        continue;
-                    }
-
-                    if (it.getType().toString().endsWith("_CHESTPLATE") && opener.getInventory().getChestplate() == null) {
-                        opener.getInventory().setChestplate(it);
-                        it.setAmount(0);
-                        continue;
-                    }
-
-                    if (it.getType().toString().endsWith("_LEGGINGS") && opener.getInventory().getLeggings() == null) {
-                        opener.getInventory().setLeggings(it);
-                        it.setAmount(0);
-                        continue;
-                    }
-
-                    if (it.getType().toString().endsWith("_BOOTS") && opener.getInventory().getBoots() == null) {
-                        opener.getInventory().setBoots(it);
-                        it.setAmount(0);
-                        continue;
-                    }
-                }
-
-                final Collection<ItemStack> ar = opener.getInventory().addItem(it).values();
-                if (ar.isEmpty()) {
+            if (CONFIG.getBoolean("auto-equip-armor", true)) {
+                if (it.getType().toString().endsWith("_HELMET") && opener.getInventory().getHelmet() == null) {
+                    opener.getInventory().setHelmet(it);
                     it.setAmount(0);
                     continue;
                 }
 
-                it.setAmount(ar.iterator().next().getAmount());
+                if (it.getType().toString().endsWith("_CHESTPLATE") && opener.getInventory().getChestplate() == null) {
+                    opener.getInventory().setChestplate(it);
+                    it.setAmount(0);
+                    continue;
+                }
+
+                if (it.getType().toString().endsWith("_LEGGINGS") && opener.getInventory().getLeggings() == null) {
+                    opener.getInventory().setLeggings(it);
+                    it.setAmount(0);
+                    continue;
+                }
+
+                if (it.getType().toString().endsWith("_BOOTS") && opener.getInventory().getBoots() == null) {
+                    opener.getInventory().setBoots(it);
+                    it.setAmount(0);
+                    continue;
+                }
             }
 
-            update();
-            return;
+            final Collection<ItemStack> ar = opener.getInventory().addItem(it).values();
+            if (ar.isEmpty()) {
+                it.setAmount(0);
+                continue;
+            }
+
+            it.setAmount(ar.iterator().next().getAmount());
         }
+
+        update();
 
         final GraveOpenEvent graveOpenEvent = new GraveOpenEvent(opener, this);
         Bukkit.getPluginManager().callEvent(graveOpenEvent);
@@ -296,4 +308,6 @@ public class Grave {
     public String getPlayerName() {
         return playerName;
     }
+
+    public int getGraveID() { return graveID; }
 }

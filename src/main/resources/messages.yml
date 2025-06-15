@@ -28,8 +28,15 @@ death-message:
 
 grave-list:
   header: "&#FF00FF&l=== GRAVES ==="
-  grave: "&#FF00FF[TP] &#FFAAFF%player% &7- &#FFAAFF%world% %x%, %y%, %z% &7(%time%)"
+  tp-option: "&#FF00FF[TP] "
+  restore-option: "&#FF00FF[Restore] "
+  grave: "&#FFAAFF%player% &7- &#FFAAFF%world% %x%, %y%, %z% &7(%time%)"
   no-graves: "&#FFAAFFThere are no graves!"
+
+grave-restore:
+  grave-not-found: "&cWe cannot find a grave with that id"
+  restore-success: "&aGrave restored!"
+  user-offline: "&cYou cannot restore grave of offline user"
 
 update-notifier: "&#FF88FFThere is a new version of AxGraves available! &#DDDDDD(&#FFFFFFcurrent: &#FF0000%current% &#DDDDDD| &#FFFFFFlatest: &#00FF00%latest%&#DDDDDD)"
 

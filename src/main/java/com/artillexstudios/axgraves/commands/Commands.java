@@ -3,6 +3,7 @@ package com.artillexstudios.axgraves.commands;
 import com.artillexstudios.axapi.utils.StringUtils;
 import com.artillexstudios.axgraves.commands.subcommands.SubCommandList;
 import com.artillexstudios.axgraves.commands.subcommands.SubCommandReload;
+import com.artillexstudios.axgraves.commands.subcommands.SubCommandRestore;
 import com.artillexstudios.axgraves.commands.subcommands.SubCommandTeleport;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -42,5 +43,11 @@ public class Commands {
     @CommandPermission("axgraves.tp")
     public void tp(@NotNull Player sender, World world, double x, double y, double z) {
         SubCommandTeleport.INSTANCE.subCommand(sender, world, x, y, z);
+    }
+
+    @Subcommand(("restore"))
+    @CommandPermission("axgraves.restore")
+    public void restore(@NotNull Player sender, int graveID) {
+        SubCommandRestore.INSTANCE.subCommand(sender,graveID);
     }
 }
